@@ -1,0 +1,161 @@
+{
+  "projectName": "Bistrup Byggeprojekt",
+  "address": "Bistrupgårdsvej 1",
+  "rooms": [
+    {
+      "id": 4,
+      "name": "Hobbyrum",
+      "floor": "kælder",
+      "description": "Hobbyrummet i kælderen er både legeværelse og kontorrum i dag. I fremtiden vil det også agere tv-rum, så vi skal gøre lidt ekstra ved oplevelsen — både i form af rør, gulv og el.",
+      "initiatives": [
+        { "category": "VVS", "description": "Rørkasse flyttes", "status": "ikke_startet" },
+        { "category": "VVS", "description": "Der rilles fra rørkasse til radiatorer som skal være under vinduerne (Sydvendt)", "status": "ikke_startet" },
+        { "category": "VVS", "description": "2 nye radiatorer under vinduerne (Sydvendt)", "status": "ikke_startet" },
+        { "category": "Loft", "description": "Reparation af loft", "status": "ikke_startet" },
+        { "category": "Loft", "description": "Loft fuldspartles", "status": "ikke_startet" },
+        { "category": "Gulv", "description": "Microcement på gulv", "status": "ikke_startet" },
+        { "category": "El", "description": "3 udtag i loft fjernes", "status": "ikke_startet" },
+        { "category": "El", "description": "2 kontakter udskiftes/fjernes", "status": "ikke_startet" },
+        { "category": "El", "description": "5 nye dobbelt kontakter indsættes", "status": "ikke_startet" },
+        { "category": "El", "description": "Ledning ved udluftning fjernes/freses ind i væg — men der skal stadig være udluftning", "status": "ikke_startet" },
+        { "category": "El", "description": "Kontakt ved døren som kan tænde samtlige lyskilder i rummet", "status": "ikke_startet" }
+      ],
+      "openQuestions": []
+    },
+    {
+      "id": 5,
+      "name": "Viktualierum",
+      "floor": "kælder",
+      "description": "Det vigtige er at komme af med rør og faldstamme i viktualierummet, ved at få dem ridset ned i gulvet.",
+      "initiatives": [
+        { "category": "VVS", "description": "Alle rør og faldstamme rilles ned i gulvet", "status": "ikke_startet" },
+        { "category": "Vinduer", "description": "Vindue lukkes", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Vi har ikke besluttet os for El.", "category": "El", "resolved": false }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Badeværelse kælder",
+      "floor": "kælder",
+      "description": "Vi omformer det nuværende kælder-vaskerum til at være badeværelse — med gulvvarme, en lysskakt, væg med rør, karbad og niceness.",
+      "initiatives": [
+        { "category": "Andet", "description": "Der laves ny og større lysskakt (gulv til loft)", "status": "ikke_startet" },
+        { "category": "Gulv", "description": "Gulvvarme og nyt gulv", "status": "ikke_startet" },
+        { "category": "VVS", "description": "Væk med alle rør — ned under gulvet", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Vi har ikke besluttet os for Lys, Kontakter/El eller ventilation", "category": "El", "resolved": false },
+        { "question": "Vi ved endnu ikke, hvorfor badeværelset er en smule hævet over gangen... regner med at vi kan komme ned under.", "category": "Gulv", "resolved": false }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Kældergang",
+      "floor": "kælder",
+      "description": "Kældergangen er et lille område på bunden af trappen, der forbinder trappen med det nye badeværelse. Vi skal have mikrocement i gulvet, eventuelt også gøre noget med vand- og varmesituationen.",
+      "initiatives": [
+        { "category": "Gulv", "description": "Microcement på gulv", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Overvej at gøre noget ved gulvet — ved meget højt vandspejl kommer vand op fra krybekælderen under trappen — overvej derfor brøndpumpe dér eller blot bedre gulv evt med gulvvarme", "category": "Gulv", "resolved": false }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Opbevaringsrum",
+      "floor": "kælder",
+      "description": "Det store opbevaringsrum skal der ikke gøres meget ved, men vi skal væk med rør og gøre noget ved radiatorerne. Eventuelt tænke lidt over brøndpumpen og ellet.",
+      "initiatives": [
+        { "category": "VVS", "description": "Væk med rør — der rilles fra fyrrum til 2 nye radiatorer under de to vinduer (Sydvendt)", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Brøndpumpe — brug nuværende hul, men få det lukket til for at reducere Radon, og hav en automatiseret brøndpumpe", "category": "VVS", "resolved": false },
+        { "question": "El i værkstedsrummet — skal det sidde i loft? Hvor skal være stikkontakter?", "category": "El", "resolved": false },
+        { "question": "Luk vinduerne — eller få nogle af højere kvalitet?", "category": "Vinduer", "resolved": false }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Vaskerum",
+      "floor": "kælder",
+      "description": "Det nuværende fyrrum bliver til vaskerum, hvor vi også installerer hårde hvidevarer dernede — for at få de hårde hvidevarer væk fra det nye badeværelse.",
+      "initiatives": [
+        { "category": "VVS", "description": "Installation af vaskemaskine og tørretumbler i fyrrum", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Luk vinduerne — eller få nogle af højere kvalitet?", "category": "Vinduer", "resolved": false },
+        { "question": "Dedikeret ventilation (f.eks. DUKA genvindingsanlæg?)", "category": "Ventilation", "resolved": false }
+      ]
+    }
+    ,
+    {
+      "id": 1,
+      "name": "Soveværelser og Gang",
+      "floor": "1.sal",
+      "description": "Børneværelse, soveværelse og gang på 1. sal. Overordnet handler det om at gøre de to soveværelser mere behagelige for en firepersoners familie.",
+      "initiatives": [
+        { "category": "Vinduer", "description": "Nyt gulv-til-loft vindue i børneværelse", "status": "ikke_startet" },
+        { "category": "Vægge", "description": "Skillevæg i midten af soveværelset, og åbning af blændet dørhul", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Indfør gulvvarme og Dinesen Douglas gulve? Eller bare 3 bedre radiatorer?", "category": "Gulv", "resolved": false }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Badeværelse 1. sal",
+      "floor": "1.sal",
+      "description": "De to små badeværelser kombineres til ét større, lækrere badeværelse med ovenlys.",
+      "initiatives": [
+        { "category": "Gulv", "description": "Gulvvarme og fliser på gulv (sandsynligvis to lag fliser nu som skal fjernes)", "status": "ikke_startet" },
+        { "category": "Vægge", "description": "Kun fliser på de 3 sider i bruseniche — resten tapetseres og males (ingen sokkel)", "status": "ikke_startet" },
+        { "category": "Andet", "description": "Ovenlys \"væg-til-væg\"", "status": "ikke_startet" },
+        { "category": "Vinduer", "description": "Nyt gulv-til-loft vindue mod haven", "status": "ikke_startet" },
+        { "category": "Andet", "description": "Én dør fra badeværelse mod entré — sort på yderside, hvid på inderside", "status": "ikke_startet" },
+        { "category": "El", "description": "El til ovenlys", "status": "ikke_startet" },
+        { "category": "Ventilation", "description": "Ventilation i bruseniche", "status": "ikke_startet" }
+      ],
+      "openQuestions": [
+        { "question": "Er der plads i gulvet til fald fra bruseniche?", "category": "Gulv", "resolved": false },
+        { "question": "El til lys og kontakter?", "category": "El", "resolved": false }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Entré",
+      "floor": "1.sal",
+      "description": "Entréen på 1. sal med fliser og gulvvarme.",
+      "initiatives": [
+        { "category": "Gulv", "description": "Samme fliser som i badeværelset", "status": "ikke_startet" },
+        { "category": "Gulv", "description": "Gulvvarme som i badeværelset", "status": "ikke_startet" }
+      ],
+      "openQuestions": []
+    }
+  ],
+  "crossCuttingInitiatives": [
+    {
+      "description": "Vi tager rør ned i kælderen. Dette står separat firma for, da vi antager asbest-firma skal bruges (afventer prøver)",
+      "status": "ikke_startet",
+      "affectedRooms": [4, 5, 6, 7, 8, 9]
+    },
+    {
+      "description": "Hvis der er asbest i gamle fliser, bliver dette også håndteret først af andet firma",
+      "status": "ikke_startet",
+      "affectedRooms": [4, 5, 6, 7, 8, 9]
+    },
+    {
+      "description": "Nye døre: 8 heraf 2 i vådrum (4 oppe, 1 legekælder, 3 kælder)",
+      "status": "ikke_startet",
+      "affectedRooms": [4, 6]
+    }
+  ],
+  "crossCuttingQuestions": [
+    {
+      "question": "Vi vil gerne have varmt vand og el-stik tilgængeligt udenfor (på Nordsiden af huset til evt Sauna og udebad og robotplæneklipper)",
+      "category": "VVS",
+      "resolved": false
+    }
+  ]
+}
