@@ -1,6 +1,6 @@
 import type { InitiativeStatus } from "@/lib/types";
 
-const statusConfig: Record<
+const STATUS_CONFIG: Record<
   InitiativeStatus,
   { label: string; bg: string; text: string; dot: string }
 > = {
@@ -29,7 +29,7 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  const config = STATUS_CONFIG[status];
 
   return (
     <span

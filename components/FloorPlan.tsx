@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Room } from "@/lib/types";
-import { getRoomStats } from "@/lib/room-stats";
+import { getRoomStats, type RoomStats } from "@/lib/room-stats";
 
 interface RoomPolygon {
   points: string;
@@ -21,8 +21,8 @@ const ROOM_POLYGONS: Record<number, RoomPolygon> = {
   9: { points: "121,70 446,70 446,244 121,244", labelX: 283, labelY: 157 },
 };
 
-function getRoomFillColor(room: Room): string {
-  const { done, inProgress, total } = getRoomStats(room);
+function getRoomFillColor(stats: RoomStats): string {
+  const { done, inProgress, total } = stats;
 
   if (total === 0) return "rgba(155,155,155,0.25)";
   if (done === total) return "rgba(74,158,107,0.3)";
@@ -59,7 +59,7 @@ export default function FloorPlan({ rooms }: FloorPlanProps) {
           if (!room) return null;
 
           const isHovered = hoveredRoom === id;
-          const { unresolvedQuestions } = getRoomStats(room);
+          const stats = getRoomStats(room);
 
           return (
             <g
@@ -79,7 +79,7 @@ export default function FloorPlan({ rooms }: FloorPlanProps) {
             >
               <polygon
                 points={poly.points}
-                fill={isHovered ? "rgba(217,119,87,0.25)" : getRoomFillColor(room)}
+                fill={isHovered ? "rgba(217,119,87,0.25)" : getRoomFillColor(stats)}
                 stroke={isHovered ? "#D97757" : "rgba(26,26,26,0.15)"}
                 strokeWidth={isHovered ? 3 : 1.5}
                 className="transition-all duration-150"
@@ -88,7 +88,7 @@ export default function FloorPlan({ rooms }: FloorPlanProps) {
                 <RoomTooltip
                   poly={poly}
                   room={room}
-                  unresolvedQuestions={unresolvedQuestions}
+                  unresolvedQuestions={stats.unresolvedQuestions}
                 />
               )}
             </g>

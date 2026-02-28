@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import type { Floor } from "@/lib/types";
 
-type Tab = Floor | "hele_huset";
+export type Tab = Floor | "hele_huset";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "kælder", label: "Kælder" },
@@ -15,8 +14,6 @@ interface FloorTabsProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
 }
-
-export type { Tab };
 
 export default function FloorTabs({ activeTab, onTabChange }: FloorTabsProps) {
   return (

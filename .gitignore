@@ -26,3 +26,4 @@ npm-debug.log*
 # screenshots from dev
 *.png
 !public/*.png
+.vercel

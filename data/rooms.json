@@ -88,8 +88,7 @@
         { "question": "Luk vinduerne — eller få nogle af højere kvalitet?", "category": "Vinduer", "resolved": false },
         { "question": "Dedikeret ventilation (f.eks. DUKA genvindingsanlæg?)", "category": "Ventilation", "resolved": false }
       ]
-    }
-    ,
+    },
     {
       "id": 1,
       "name": "Soveværelser og Gang",

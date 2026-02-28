@@ -1,4 +1,5 @@
 import type { Room, Category } from "@/lib/types";
+import QuestionCard from "./QuestionCard";
 import StatusBadge from "./StatusBadge";
 
 const CATEGORY_ORDER: Category[] = [
@@ -29,14 +30,12 @@ export default function RoomDetail({ room }: RoomDetailProps) {
 
   return (
     <div className="space-y-8">
-      {/* Description */}
       <div className="card p-6">
         <p className="text-text-secondary leading-relaxed heading text-[17px]">
           {room.description}
         </p>
       </div>
 
-      {/* Initiatives by category */}
       <div>
         <h2 className="heading text-xl font-semibold text-text-primary mb-4">
           Initiativer
@@ -67,7 +66,6 @@ export default function RoomDetail({ room }: RoomDetailProps) {
         </div>
       </div>
 
-      {/* Open questions */}
       {unresolvedQuestions.length > 0 && (
         <div>
           <h2 className="heading text-xl font-semibold text-text-primary mb-4">
@@ -78,24 +76,12 @@ export default function RoomDetail({ room }: RoomDetailProps) {
           </h2>
           <div className="space-y-3">
             {unresolvedQuestions.map((q, idx) => (
-              <div
-                key={idx}
-                className="bg-amber-50 border border-amber-200/60 rounded-xl p-4 flex items-start gap-3"
-              >
-                <span className="mt-0.5 text-status-progress text-lg">?</span>
-                <div>
-                  <p className="text-sm text-text-primary">{q.question}</p>
-                  <span className="text-xs text-text-muted mt-1 block">
-                    {q.category}
-                  </span>
-                </div>
-              </div>
+              <QuestionCard key={idx} question={q} />
             ))}
           </div>
         </div>
       )}
 
-      {/* Resolved questions */}
       {resolvedQuestions.length > 0 && (
         <div>
           <h2 className="heading text-xl font-semibold text-text-primary mb-4">
@@ -121,7 +107,6 @@ export default function RoomDetail({ room }: RoomDetailProps) {
         </div>
       )}
 
-      {/* Notes */}
       {room.notes && (
         <div>
           <h2 className="heading text-xl font-semibold text-text-primary mb-4">
