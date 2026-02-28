@@ -89,52 +89,54 @@ export default function MiniFloorPlan({ currentRoomId, floor }: MiniFloorPlanPro
                   points={poly.points}
                   fill={
                     isCurrent
-                      ? "rgba(217,48,37,0.30)"
+                      ? "rgba(217,48,37,0.35)"
                       : isHovered
-                        ? "rgba(217,119,87,0.25)"
-                        : "rgba(155,155,155,0.15)"
+                        ? "rgba(140,140,140,0.30)"
+                        : "rgba(160,160,160,0.20)"
                   }
                   stroke={
                     isCurrent
-                      ? "#D93025"
+                      ? "#C62828"
                       : isHovered
-                        ? "#D97757"
-                        : "rgba(26,26,26,0.1)"
+                        ? "rgba(80,80,80,0.4)"
+                        : "rgba(120,120,120,0.25)"
                   }
-                  strokeWidth={isCurrent ? 4 : isHovered ? 2.5 : 1}
+                  strokeWidth={isCurrent ? 5 : isHovered ? 2 : 1}
                   className="transition-all duration-150"
                 />
                 <text
                   x={poly.labelX}
-                  y={poly.labelY}
+                  y={isCurrent ? poly.labelY - 12 : poly.labelY}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  className={`text-[18px] font-semibold ${
-                    isCurrent ? "fill-[#D93025]" : "fill-text-secondary"
+                  className={`font-semibold ${
+                    isCurrent
+                      ? "fill-[#C62828] text-[20px]"
+                      : "fill-[#888] text-[16px]"
                   }`}
                   style={{ fontFamily: "var(--font-sans)", pointerEvents: "none" }}
                 >
-                  {room.id}
+                  {isCurrent ? room.name : room.id}
                 </text>
                 {isCurrent && (
                   <text
                     x={poly.labelX}
-                    y={poly.labelY + 28}
+                    y={poly.labelY + 16}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    className="fill-[#D93025] text-[14px] font-medium"
+                    className="fill-[#C62828] text-[14px] font-bold"
                     style={{ fontFamily: "var(--font-sans)", pointerEvents: "none" }}
                   >
-                    {room.name}
+                    Du er her
                   </text>
                 )}
                 {isHovered && !isCurrent && (
                   <text
                     x={poly.labelX}
-                    y={poly.labelY + 28}
+                    y={poly.labelY + 22}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    className="fill-text-secondary text-[14px]"
+                    className="fill-[#666] text-[13px]"
                     style={{ fontFamily: "var(--font-sans)", pointerEvents: "none" }}
                   >
                     {room.name}

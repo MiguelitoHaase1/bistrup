@@ -85,11 +85,7 @@ export default function FloorPlan({ rooms }: FloorPlanProps) {
                 className="transition-all duration-150"
               />
               {isHovered && (
-                <RoomTooltip
-                  poly={poly}
-                  room={room}
-                  unresolvedQuestions={stats.unresolvedQuestions}
-                />
+                <RoomTooltip poly={poly} room={room} />
               )}
             </g>
           );
@@ -99,48 +95,80 @@ export default function FloorPlan({ rooms }: FloorPlanProps) {
   );
 }
 
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen - 1) + "…";
+}
+
+function wrapText(text: string, maxCharsPerLine: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    if (current.length + word.length + 1 > maxCharsPerLine && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = current ? current + " " + word : word;
+    }
+    if (lines.length === 3) {
+      lines[2] = truncate(lines[2] + " " + words.slice(words.indexOf(word) + 1).join(" "), maxCharsPerLine);
+      break;
+    }
+  }
+  if (lines.length < 3 && current) lines.push(current);
+  return lines;
+}
+
 interface RoomTooltipProps {
   poly: RoomPolygon;
   room: Room;
-  unresolvedQuestions: number;
 }
 
-function RoomTooltip({ poly, room, unresolvedQuestions }: RoomTooltipProps) {
-  const subtitle = unresolvedQuestions > 0
-    ? `${room.initiatives.length} initiativer · ${unresolvedQuestions} spørgsmål`
-    : `${room.initiatives.length} initiativer`;
+function RoomTooltip({ poly, room }: RoomTooltipProps) {
+  const descLines = wrapText(room.description, 32);
+  const lineHeight = 18;
+  const titleHeight = 26;
+  const padding = 16;
+  const tooltipHeight = titleHeight + descLines.length * lineHeight + padding * 2;
+  const tooltipWidth = 280;
 
   return (
     <g>
       <rect
-        x={poly.labelX - 100}
-        y={poly.labelY - 32}
-        width={200}
-        height={64}
+        x={poly.labelX - tooltipWidth / 2}
+        y={poly.labelY - tooltipHeight / 2}
+        width={tooltipWidth}
+        height={tooltipHeight}
         rx={8}
         fill="white"
         stroke="#E5E4E0"
         strokeWidth={1}
-        opacity={0.95}
+        opacity={0.97}
+        filter="drop-shadow(0 2px 4px rgba(0,0,0,0.08))"
       />
       <text
         x={poly.labelX}
-        y={poly.labelY - 8}
+        y={poly.labelY - tooltipHeight / 2 + padding + 14}
         textAnchor="middle"
-        className="fill-text-primary text-[16px] font-semibold"
+        className="fill-text-primary text-[15px] font-semibold"
         style={{ fontFamily: "var(--font-serif)" }}
       >
         {room.id}: {room.name}
       </text>
-      <text
-        x={poly.labelX}
-        y={poly.labelY + 16}
-        textAnchor="middle"
-        className="fill-text-secondary text-[13px]"
-        style={{ fontFamily: "var(--font-sans)" }}
-      >
-        {subtitle}
-      </text>
+      {descLines.map((line, i) => (
+        <text
+          key={i}
+          x={poly.labelX}
+          y={poly.labelY - tooltipHeight / 2 + padding + titleHeight + 6 + i * lineHeight}
+          textAnchor="middle"
+          className="fill-text-secondary text-[12px]"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          {line}
+        </text>
+      ))}
     </g>
   );
 }
