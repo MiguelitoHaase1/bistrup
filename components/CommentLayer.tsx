@@ -317,6 +317,13 @@ function CommentForm({
 // Anchor-based positioning helpers
 // ---------------------------------------------------------------------------
 
+function relativeOffset(clickX: number, clickY: number, rect: DOMRect) {
+  return {
+    x: rect.width > 0 ? ((clickX - rect.left) / rect.width) * 100 : 0,
+    y: rect.height > 0 ? ((clickY - rect.top) / rect.height) * 100 : 0,
+  };
+}
+
 interface AnchorPosition {
   anchorSelector: string | null;
   anchorOffsetX: number;
@@ -338,84 +345,56 @@ function findNearestAnchor(
     ((clickY + window.scrollY - containerDocTop) / container.scrollHeight) *
     100;
 
-  // Walk up from click target to find the nearest anchor
-  let el: HTMLElement | null = target;
-  while (el && el !== container) {
-    const anchor = el.getAttribute("data-comment-anchor");
-    if (anchor) {
-      const anchorRect = el.getBoundingClientRect();
-      const offsetX =
-        anchorRect.width > 0
-          ? ((clickX - anchorRect.left) / anchorRect.width) * 100
-          : 0;
-      const offsetY =
-        anchorRect.height > 0
-          ? ((clickY - anchorRect.top) / anchorRect.height) * 100
-          : 0;
-      return {
-        anchorSelector: anchor,
-        anchorOffsetX: offsetX,
-        anchorOffsetY: offsetY,
-        fallbackX,
-        fallbackY,
-      };
-    }
-    el = el.parentElement;
-  }
-
-  // No anchor found — also scan nearby anchors by proximity
-  const anchors = container.querySelectorAll<HTMLElement>(
-    "[data-comment-anchor]",
-  );
-  let best: { el: HTMLElement; dist: number } | null = null;
-  for (const a of anchors) {
-    const r = a.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const dist = Math.hypot(clickX - cx, clickY - cy);
-    if (!best || dist < best.dist) best = { el: a, dist };
-  }
-
-  if (best && best.dist < 300) {
-    const anchorRect = best.el.getBoundingClientRect();
-    const offsetX =
-      anchorRect.width > 0
-        ? ((clickX - anchorRect.left) / anchorRect.width) * 100
-        : 0;
-    const offsetY =
-      anchorRect.height > 0
-        ? ((clickY - anchorRect.top) / anchorRect.height) * 100
-        : 0;
+  const makeResult = (el: HTMLElement): AnchorPosition => {
+    const offset = relativeOffset(clickX, clickY, el.getBoundingClientRect());
     return {
-      anchorSelector: best.el.getAttribute("data-comment-anchor"),
-      anchorOffsetX: offsetX,
-      anchorOffsetY: offsetY,
+      anchorSelector: el.getAttribute("data-comment-anchor"),
+      anchorOffsetX: offset.x,
+      anchorOffsetY: offset.y,
       fallbackX,
       fallbackY,
     };
+  };
+
+  // Walk up from click target to find the nearest anchor
+  const ancestor = target.closest?.("[data-comment-anchor]") as HTMLElement | null;
+  if (ancestor && container.contains(ancestor)) {
+    return makeResult(ancestor);
   }
 
-  return {
-    anchorSelector: null,
-    anchorOffsetX: 0,
-    anchorOffsetY: 0,
-    fallbackX,
-    fallbackY,
-  };
+  // No ancestor anchor — scan nearby anchors by proximity
+  let best: { el: HTMLElement; dist: number } | null = null;
+  for (const a of container.querySelectorAll<HTMLElement>("[data-comment-anchor]")) {
+    const r = a.getBoundingClientRect();
+    const dist = Math.hypot(clickX - (r.left + r.width / 2), clickY - (r.top + r.height / 2));
+    if (!best || dist < best.dist) best = { el: a, dist };
+  }
+
+  if (best && best.dist < 300) return makeResult(best.el);
+
+  return { anchorSelector: null, anchorOffsetX: 0, anchorOffsetY: 0, fallbackX, fallbackY };
+}
+
+function buildAnchorMap(container: HTMLElement): Map<string, HTMLElement> {
+  const map = new Map<string, HTMLElement>();
+  for (const el of container.querySelectorAll<HTMLElement>("[data-comment-anchor]")) {
+    const key = el.getAttribute("data-comment-anchor");
+    if (key) map.set(key, el);
+  }
+  return map;
 }
 
 function resolvePosition(
   comment: Comment,
-  container: HTMLElement,
+  anchorMap: Map<string, HTMLElement>,
+  containerRect: DOMRect,
+  containerDocTop: number,
+  containerScrollHeight: number,
 ): { left: string; top: string } {
   if (comment.anchor_selector) {
-    const anchor = container.querySelector<HTMLElement>(
-      `[data-comment-anchor="${CSS.escape(comment.anchor_selector)}"]`,
-    );
+    const anchor = anchorMap.get(comment.anchor_selector);
     if (anchor) {
       const anchorRect = anchor.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      const containerDocTop = containerRect.top + window.scrollY;
 
       const absX = anchorRect.left + (comment.anchor_offset_x / 100) * anchorRect.width;
       const absY =
@@ -424,17 +403,12 @@ function resolvePosition(
         (comment.anchor_offset_y / 100) * anchorRect.height;
 
       const pctX = ((absX - containerRect.left) / containerRect.width) * 100;
-      const pctY =
-        ((absY - containerDocTop) / container.scrollHeight) * 100;
+      const pctY = ((absY - containerDocTop) / containerScrollHeight) * 100;
 
       return { left: `${pctX}%`, top: `${pctY}%` };
     }
   }
-  // Fallback to stored page-level percentages
-  return {
-    left: `${comment.x_percent}%`,
-    top: `${comment.y_percent}%`,
-  };
+  return { left: `${comment.x_percent}%`, top: `${comment.y_percent}%` };
 }
 
 // ---------------------------------------------------------------------------
@@ -621,11 +595,11 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
       page_path: pathname,
       x_percent: opts.x,
       y_percent: opts.y,
-      anchor_selector: opts.anchorSelector || null,
-      anchor_offset_x: opts.anchorOffsetX || 0,
-      anchor_offset_y: opts.anchorOffsetY || 0,
+      anchor_selector: opts.anchorSelector ?? null,
+      anchor_offset_x: opts.anchorOffsetX ?? 0,
+      anchor_offset_y: opts.anchorOffsetY ?? 0,
       text: opts.text.trim(),
-      image_url: opts.imagePreviewUrl || null,
+      image_url: opts.imagePreviewUrl ?? null,
       author: commentAuthor,
       created_at: new Date().toISOString(),
     };
@@ -652,9 +626,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
           page_path: pathname,
           x_percent: opts.x,
           y_percent: opts.y,
-          anchor_selector: opts.anchorSelector || null,
-          anchor_offset_x: opts.anchorOffsetX || 0,
-          anchor_offset_y: opts.anchorOffsetY || 0,
+          anchor_selector: opts.anchorSelector ?? null,
+          anchor_offset_x: opts.anchorOffsetX ?? 0,
+          anchor_offset_y: opts.anchorOffsetY ?? 0,
           text: opts.text.trim(),
           image_url: imageUrl,
           author: commentAuthor,
@@ -719,7 +693,7 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
       text: formText,
       image: formImage,
       imagePreviewUrl,
-    });
+    }).finally(() => { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); });
     // Clear form immediately (optimistic)
     setNewPinPos(null);
     setFormText("");
@@ -743,18 +717,25 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
       text: replyText,
       image: replyImage,
       imagePreviewUrl,
-    });
+    }).finally(() => { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); });
     // Clear reply form immediately (optimistic)
     setReplyText("");
     setReplyImage(null);
   };
 
-  // -- Force re-render on resize so anchor positions recalculate --
+  // -- Debounced re-render on resize so anchor positions recalculate --
   const [, setResizeTick] = useState(0);
   useEffect(() => {
-    const onResize = () => setResizeTick((t) => t + 1);
+    let timer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setResizeTick((t) => t + 1), 150);
+    };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   // -- Derived --
@@ -785,10 +766,17 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
         {children}
 
         {/* Existing pins */}
-        {comments.map((comment, idx) => {
+        {(() => {
+          const container = containerRef.current;
+          const anchorMap = container ? buildAnchorMap(container) : new Map<string, HTMLElement>();
+          const cRect = container?.getBoundingClientRect();
+          const cDocTop = cRect ? cRect.top + window.scrollY : 0;
+          const cScrollH = container?.scrollHeight ?? 1;
+
+          return comments.map((comment, idx) => {
           const isPending = comment.id.startsWith("temp-");
-          const pos = containerRef.current
-            ? resolvePosition(comment, containerRef.current)
+          const pos = cRect
+            ? resolvePosition(comment, anchorMap, cRect, cDocTop, cScrollH)
             : { left: `${comment.x_percent}%`, top: `${comment.y_percent}%` };
           return (
           <div
@@ -822,7 +810,8 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
             )}
           </div>
           );
-        })}
+        });
+        })()}
 
         {/* New pin being placed */}
         {newPinPos && (
