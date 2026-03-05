@@ -18,6 +18,9 @@ export interface Comment {
   page_path: string;
   x_percent: number;
   y_percent: number;
+  anchor_selector: string | null;
+  anchor_offset_x: number;
+  anchor_offset_y: number;
   text: string;
   image_url: string | null;
   author: string;

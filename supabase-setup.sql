@@ -24,13 +24,18 @@ create policy "Allow all inserts" on comments for insert with check (true);
 create policy "Allow all updates" on comments for update using (true);
 create policy "Allow all deletes" on comments for delete using (true);
 
--- 4. Enable real-time for live collaboration
+-- 4. Anchor-based positioning (element-relative)
+alter table comments add column if not exists anchor_selector text;
+alter table comments add column if not exists anchor_offset_x numeric default 0;
+alter table comments add column if not exists anchor_offset_y numeric default 0;
+
+-- 5. Enable real-time for live collaboration
 alter publication supabase_realtime add table comments;
 
--- 5. Storage bucket for comment images
+-- 6. Storage bucket for comment images
 insert into storage.buckets (id, name, public) values ('comment-images', 'comment-images', true);
 
--- 6. Storage policies: public read + upload
+-- 7. Storage policies: public read + upload
 create policy "Public read comment images"
   on storage.objects for select
   using (bucket_id = 'comment-images');

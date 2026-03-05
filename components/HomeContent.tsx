@@ -66,7 +66,7 @@ function FloorView({ rooms, floor }: FloorViewProps) {
 
   return (
     <>
-      <div>
+      <div data-comment-anchor={`floor-${floor}-header`}>
         <h2 className="heading text-3xl font-bold text-text-primary mb-2">
           {config.title}
         </h2>
@@ -74,7 +74,7 @@ function FloorView({ rooms, floor }: FloorViewProps) {
       </div>
 
       {config.hasFloorPlan ? (
-        <div>
+        <div data-comment-anchor={`floor-${floor}-floorplan`}>
           <h3 className="heading text-xl font-semibold text-text-primary mb-3">
             Plantegning — {config.title}
           </h3>
@@ -90,7 +90,7 @@ function FloorView({ rooms, floor }: FloorViewProps) {
         </div>
       )}
 
-      <div>
+      <div data-comment-anchor={`floor-${floor}-rooms`}>
         <h3 className="heading text-xl font-semibold text-text-primary mb-3">
           Alle rum
         </h3>
@@ -118,7 +118,7 @@ function WholeHouseView() {
       </div>
 
       {data.crossCuttingInitiatives.length > 0 && (
-        <div>
+        <div data-comment-anchor="whole-house-initiatives">
           <h3 className="heading text-xl font-semibold text-text-primary mb-3">
             Tværgående initiativer
           </h3>
@@ -136,7 +136,7 @@ function WholeHouseView() {
       )}
 
       {data.crossCuttingQuestions.length > 0 && (
-        <div>
+        <div data-comment-anchor="whole-house-questions">
           <h3 className="heading text-xl font-semibold text-text-primary mb-3">
             Ubesvarede spørgsmål
           </h3>

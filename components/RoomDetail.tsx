@@ -30,19 +30,19 @@ export default function RoomDetail({ room }: RoomDetailProps) {
 
   return (
     <div className="space-y-8">
-      <div className="card p-6">
+      <div className="card p-6" data-comment-anchor={`room-${room.id}-description`}>
         <p className="text-text-secondary leading-relaxed heading text-[17px]">
           {room.description}
         </p>
       </div>
 
-      <div>
+      <div data-comment-anchor={`room-${room.id}-initiatives`}>
         <h2 className="heading text-xl font-semibold text-text-primary mb-4">
           Initiativer
         </h2>
         <div className="space-y-4">
           {grouped.map((group) => (
-            <div key={group.category} className="card overflow-hidden">
+            <div key={group.category} className="card overflow-hidden" data-comment-anchor={`room-${room.id}-${group.category}`}>
               <div className="px-5 py-3 bg-cream-dark/50 border-b border-border-light">
                 <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wide">
                   {group.category}
@@ -67,7 +67,7 @@ export default function RoomDetail({ room }: RoomDetailProps) {
       </div>
 
       {unresolvedQuestions.length > 0 && (
-        <div>
+        <div data-comment-anchor={`room-${room.id}-questions`}>
           <h2 className="heading text-xl font-semibold text-text-primary mb-4">
             Ubesvarede spørgsmål
             <span className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
@@ -108,7 +108,7 @@ export default function RoomDetail({ room }: RoomDetailProps) {
       )}
 
       {room.notes && (
-        <div>
+        <div data-comment-anchor={`room-${room.id}-notes`}>
           <h2 className="heading text-xl font-semibold text-text-primary mb-4">
             Noter
           </h2>

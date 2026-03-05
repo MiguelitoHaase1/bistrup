@@ -314,6 +314,130 @@ function CommentForm({
 }
 
 // ---------------------------------------------------------------------------
+// Anchor-based positioning helpers
+// ---------------------------------------------------------------------------
+
+interface AnchorPosition {
+  anchorSelector: string | null;
+  anchorOffsetX: number;
+  anchorOffsetY: number;
+  fallbackX: number;
+  fallbackY: number;
+}
+
+function findNearestAnchor(
+  target: HTMLElement,
+  clickX: number,
+  clickY: number,
+  container: HTMLElement,
+): AnchorPosition {
+  const rect = container.getBoundingClientRect();
+  const containerDocTop = rect.top + window.scrollY;
+  const fallbackX = ((clickX - rect.left) / rect.width) * 100;
+  const fallbackY =
+    ((clickY + window.scrollY - containerDocTop) / container.scrollHeight) *
+    100;
+
+  // Walk up from click target to find the nearest anchor
+  let el: HTMLElement | null = target;
+  while (el && el !== container) {
+    const anchor = el.getAttribute("data-comment-anchor");
+    if (anchor) {
+      const anchorRect = el.getBoundingClientRect();
+      const offsetX =
+        anchorRect.width > 0
+          ? ((clickX - anchorRect.left) / anchorRect.width) * 100
+          : 0;
+      const offsetY =
+        anchorRect.height > 0
+          ? ((clickY - anchorRect.top) / anchorRect.height) * 100
+          : 0;
+      return {
+        anchorSelector: anchor,
+        anchorOffsetX: offsetX,
+        anchorOffsetY: offsetY,
+        fallbackX,
+        fallbackY,
+      };
+    }
+    el = el.parentElement;
+  }
+
+  // No anchor found — also scan nearby anchors by proximity
+  const anchors = container.querySelectorAll<HTMLElement>(
+    "[data-comment-anchor]",
+  );
+  let best: { el: HTMLElement; dist: number } | null = null;
+  for (const a of anchors) {
+    const r = a.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dist = Math.hypot(clickX - cx, clickY - cy);
+    if (!best || dist < best.dist) best = { el: a, dist };
+  }
+
+  if (best && best.dist < 300) {
+    const anchorRect = best.el.getBoundingClientRect();
+    const offsetX =
+      anchorRect.width > 0
+        ? ((clickX - anchorRect.left) / anchorRect.width) * 100
+        : 0;
+    const offsetY =
+      anchorRect.height > 0
+        ? ((clickY - anchorRect.top) / anchorRect.height) * 100
+        : 0;
+    return {
+      anchorSelector: best.el.getAttribute("data-comment-anchor"),
+      anchorOffsetX: offsetX,
+      anchorOffsetY: offsetY,
+      fallbackX,
+      fallbackY,
+    };
+  }
+
+  return {
+    anchorSelector: null,
+    anchorOffsetX: 0,
+    anchorOffsetY: 0,
+    fallbackX,
+    fallbackY,
+  };
+}
+
+function resolvePosition(
+  comment: Comment,
+  container: HTMLElement,
+): { left: string; top: string } {
+  if (comment.anchor_selector) {
+    const anchor = container.querySelector<HTMLElement>(
+      `[data-comment-anchor="${CSS.escape(comment.anchor_selector)}"]`,
+    );
+    if (anchor) {
+      const anchorRect = anchor.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const containerDocTop = containerRect.top + window.scrollY;
+
+      const absX = anchorRect.left + (comment.anchor_offset_x / 100) * anchorRect.width;
+      const absY =
+        anchorRect.top +
+        window.scrollY +
+        (comment.anchor_offset_y / 100) * anchorRect.height;
+
+      const pctX = ((absX - containerRect.left) / containerRect.width) * 100;
+      const pctY =
+        ((absY - containerDocTop) / container.scrollHeight) * 100;
+
+      return { left: `${pctX}%`, top: `${pctY}%` };
+    }
+  }
+  // Fallback to stored page-level percentages
+  return {
+    left: `${comment.x_percent}%`,
+    top: `${comment.y_percent}%`,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -327,6 +451,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
   const [newPinPos, setNewPinPos] = useState<{
     x: number;
     y: number;
+    anchorSelector: string | null;
+    anchorOffsetX: number;
+    anchorOffsetY: number;
   } | null>(null);
 
   // New comment form
@@ -452,13 +579,15 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
         return;
 
       const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-      const containerDocTop = rect.top + window.scrollY;
+      const pos = findNearestAnchor(target, e.clientX, e.clientY, container);
 
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.pageY - containerDocTop) / container.scrollHeight) * 100;
-
-      setNewPinPos({ x, y });
+      setNewPinPos({
+        x: pos.fallbackX,
+        y: pos.fallbackY,
+        anchorSelector: pos.anchorSelector,
+        anchorOffsetX: pos.anchorOffsetX,
+        anchorOffsetY: pos.anchorOffsetY,
+      });
       setActiveThreadId(null);
       setFormText("");
       setFormImage(null);
@@ -471,6 +600,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
     parentId?: string;
     x: number;
     y: number;
+    anchorSelector?: string | null;
+    anchorOffsetX?: number;
+    anchorOffsetY?: number;
     text: string;
     image: File | null;
     imagePreviewUrl?: string | null;
@@ -489,6 +621,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
       page_path: pathname,
       x_percent: opts.x,
       y_percent: opts.y,
+      anchor_selector: opts.anchorSelector || null,
+      anchor_offset_x: opts.anchorOffsetX || 0,
+      anchor_offset_y: opts.anchorOffsetY || 0,
       text: opts.text.trim(),
       image_url: opts.imagePreviewUrl || null,
       author: commentAuthor,
@@ -517,6 +652,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
           page_path: pathname,
           x_percent: opts.x,
           y_percent: opts.y,
+          anchor_selector: opts.anchorSelector || null,
+          anchor_offset_x: opts.anchorOffsetX || 0,
+          anchor_offset_y: opts.anchorOffsetY || 0,
           text: opts.text.trim(),
           image_url: imageUrl,
           author: commentAuthor,
@@ -575,6 +713,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
     submitComment({
       x: newPinPos.x,
       y: newPinPos.y,
+      anchorSelector: newPinPos.anchorSelector,
+      anchorOffsetX: newPinPos.anchorOffsetX,
+      anchorOffsetY: newPinPos.anchorOffsetY,
       text: formText,
       image: formImage,
       imagePreviewUrl,
@@ -596,6 +737,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
       parentId: activeThreadId!,
       x: parent.x_percent,
       y: parent.y_percent,
+      anchorSelector: parent.anchor_selector,
+      anchorOffsetX: parent.anchor_offset_x,
+      anchorOffsetY: parent.anchor_offset_y,
       text: replyText,
       image: replyImage,
       imagePreviewUrl,
@@ -604,6 +748,14 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
     setReplyText("");
     setReplyImage(null);
   };
+
+  // -- Force re-render on resize so anchor positions recalculate --
+  const [, setResizeTick] = useState(0);
+  useEffect(() => {
+    const onResize = () => setResizeTick((t) => t + 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // -- Derived --
   const { activeThread, activeThreadIdx } = useMemo(() => {
@@ -635,6 +787,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
         {/* Existing pins */}
         {comments.map((comment, idx) => {
           const isPending = comment.id.startsWith("temp-");
+          const pos = containerRef.current
+            ? resolvePosition(comment, containerRef.current)
+            : { left: `${comment.x_percent}%`, top: `${comment.y_percent}%` };
           return (
           <div
             key={comment.id}
@@ -647,10 +802,7 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
                   ? "bg-coral text-white ring-2 ring-coral/30 ring-offset-2 scale-110"
                   : "bg-coral/90 text-white hover:bg-coral"
               }`}
-            style={{
-              left: `${comment.x_percent}%`,
-              top: `${comment.y_percent}%`,
-            }}
+            style={pos}
             onClick={(e) => {
               e.stopPropagation();
               setActiveThreadId(
