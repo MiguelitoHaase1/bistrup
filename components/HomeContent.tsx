@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import FloorPlan from "@/components/FloorPlan";
 import FloorTabs, { type Tab } from "@/components/FloorTabs";
-import ProgressBar from "@/components/ProgressBar";
 import QuestionCard from "@/components/QuestionCard";
 import RoomCard from "@/components/RoomCard";
 import { data } from "@/lib/data";
 import type { Room } from "@/lib/types";
-import { getAggregateStats, type RoomStats } from "@/lib/room-stats";
 
 const VALID_TABS: Tab[] = ["kælder", "1.sal", "hele_huset"];
 
@@ -65,7 +63,6 @@ interface FloorViewProps {
 
 function FloorView({ rooms, floor }: FloorViewProps) {
   const config = FLOOR_CONFIG[floor];
-  const stats = getAggregateStats(rooms);
 
   return (
     <>
@@ -75,8 +72,6 @@ function FloorView({ rooms, floor }: FloorViewProps) {
         </h2>
         <p className="text-text-secondary max-w-2xl">{config.description}</p>
       </div>
-
-      <StatsRow stats={stats} roomCount={rooms.length} />
 
       {config.hasFloorPlan ? (
         <div>
@@ -153,41 +148,5 @@ function WholeHouseView() {
         </div>
       )}
     </>
-  );
-}
-
-interface StatsRowProps {
-  stats: RoomStats;
-  roomCount: number;
-}
-
-function StatsRow({ stats, roomCount }: StatsRowProps) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="card p-5">
-        <p className="text-xs font-medium text-text-muted uppercase tracking-wide mb-1">
-          Rum
-        </p>
-        <p className="text-2xl font-bold text-text-primary">{roomCount}</p>
-      </div>
-      <div className="card p-5">
-        <p className="text-xs font-medium text-text-muted uppercase tracking-wide mb-1">
-          Initiativer
-        </p>
-        <ProgressBar
-          done={stats.done}
-          inProgress={stats.inProgress}
-          total={stats.total}
-        />
-      </div>
-      <div className="card p-5">
-        <p className="text-xs font-medium text-text-muted uppercase tracking-wide mb-1">
-          Ubesvarede spørgsmål
-        </p>
-        <p className="text-2xl font-bold text-status-progress">
-          {stats.unresolvedQuestions}
-        </p>
-      </div>
-    </div>
   );
 }

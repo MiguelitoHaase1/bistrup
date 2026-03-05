@@ -5,9 +5,9 @@ import type { Room, Floor } from "@/lib/types";
 import MiniFloorPlan from "@/components/MiniFloorPlan";
 
 const TABS: { id: Floor | "hele_huset"; label: string; href: string }[] = [
-  { id: "kælder", label: "Kælder", href: "/?tab=kælder" },
-  { id: "1.sal", label: "Ovenpå", href: "/?tab=1.sal" },
-  { id: "hele_huset", label: "Hele huset", href: "/?tab=hele_huset" },
+  { id: "kælder", label: "Kælder", href: "/oversigt?tab=kælder" },
+  { id: "1.sal", label: "Ovenpå", href: "/oversigt?tab=1.sal" },
+  { id: "hele_huset", label: "Hele huset", href: "/oversigt?tab=hele_huset" },
 ];
 
 interface RoomPageContentProps {
@@ -53,7 +53,7 @@ export default function RoomPageContent({
         {/* Main content */}
         <div className="flex-1 min-w-0 max-w-4xl">
           <Link
-            href={`/?tab=${room.floor}`}
+            href={`/oversigt?tab=${room.floor}`}
             className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-coral transition-colors mb-6 no-print"
           >
             <svg
