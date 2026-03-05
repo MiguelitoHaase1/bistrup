@@ -168,15 +168,16 @@ function ImagePreview({
 }
 
 function CommentBubble({ comment }: { comment: Comment }) {
+  const isPending = comment.id.startsWith("temp-");
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${isPending ? "opacity-60" : ""}`}>
       <div className="flex items-center gap-2">
         <Avatar name={comment.author} />
         <span className="text-sm font-medium text-text-primary">
           {comment.author}
         </span>
         <span className="text-xs text-text-muted">
-          {formatDate(comment.created_at)}
+          {isPending ? "Gemmer..." : formatDate(comment.created_at)}
         </span>
       </div>
       <p className="text-sm text-text-primary leading-relaxed whitespace-pre-wrap">
@@ -342,6 +343,9 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
   // Error feedback
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Optimistic UI: track temp IDs and confirmed real IDs
+  const confirmedIds = useRef(new Set<string>());
+
   // -- Init author from localStorage --
   useEffect(() => {
     try {
@@ -397,6 +401,11 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
         },
         (payload) => {
           const incoming = payload.new as Comment;
+          // Skip if we already added this via optimistic confirm
+          if (confirmedIds.current.has(incoming.id)) {
+            confirmedIds.current.delete(incoming.id);
+            return;
+          }
           setComments((prev) => {
             if (incoming.parent_id) {
               return prev.map((c) => {
@@ -457,27 +466,51 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
     [commentMode],
   );
 
-  // -- Unified submit (new comment or reply) --
+  // -- Optimistic submit (new comment or reply) --
   const submitComment = async (opts: {
     parentId?: string;
     x: number;
     y: number;
     text: string;
     image: File | null;
-    onDone: () => void;
-    setLoading: (v: boolean) => void;
+    imagePreviewUrl?: string | null;
   }) => {
     if (!supabase || !opts.text.trim()) return;
-    opts.setLoading(true);
     setSubmitError(null);
+
+    const commentAuthor = author.trim() || "Anonym";
+    persistAuthor();
+
+    // 1. Create optimistic comment and add to state immediately
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Comment = {
+      id: tempId,
+      parent_id: opts.parentId || null,
+      page_path: pathname,
+      x_percent: opts.x,
+      y_percent: opts.y,
+      text: opts.text.trim(),
+      image_url: opts.imagePreviewUrl || null,
+      author: commentAuthor,
+      created_at: new Date().toISOString(),
+    };
+
+    setComments((prev) => {
+      if (opts.parentId) {
+        return prev.map((c) => {
+          if (c.id !== opts.parentId) return c;
+          return { ...c, replies: [...(c.replies || []), optimistic] };
+        });
+      }
+      return [...prev, { ...optimistic, replies: [] }];
+    });
+
+    // 2. Upload image + insert in background
     try {
       let imageUrl: string | null = null;
       if (opts.image) imageUrl = await uploadImage(opts.image);
 
-      const commentAuthor = author.trim() || "Anonym";
-      persistAuthor();
-
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from(COMMENTS_TABLE)
         .insert({
           parent_id: opts.parentId || null,
@@ -487,53 +520,89 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
           text: opts.text.trim(),
           image_url: imageUrl,
           author: commentAuthor,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
-      opts.onDone();
+      // 3. Replace temp with real data, mark as confirmed for real-time dedup
+      confirmedIds.current.add(data.id);
+      setComments((prev) => {
+        if (opts.parentId) {
+          return prev.map((c) => {
+            if (c.id !== opts.parentId) return c;
+            return {
+              ...c,
+              replies: (c.replies || []).map((r) =>
+                r.id === tempId ? data : r,
+              ),
+            };
+          });
+        }
+        return prev.map((c) =>
+          c.id === tempId ? { ...data, replies: c.replies } : c,
+        );
+      });
     } catch (err) {
+      // 4. Remove optimistic comment on failure
+      setComments((prev) => {
+        if (opts.parentId) {
+          return prev.map((c) => {
+            if (c.id !== opts.parentId) return c;
+            return {
+              ...c,
+              replies: (c.replies || []).filter((r) => r.id !== tempId),
+            };
+          });
+        }
+        return prev.filter((c) => c.id !== tempId);
+      });
       const message =
-        err instanceof Error ? err.message : "Noget gik galt. Pr\u00f8v igen.";
+        err instanceof Error
+          ? err.message
+          : "Noget gik galt. Pr\u00f8v igen.";
       console.error("Failed to save comment:", err);
       setSubmitError(message);
-    } finally {
-      opts.setLoading(false);
     }
   };
 
   const handleSubmit = () => {
     if (!newPinPos) return;
+    const imagePreviewUrl = formImage
+      ? URL.createObjectURL(formImage)
+      : null;
     submitComment({
       x: newPinPos.x,
       y: newPinPos.y,
       text: formText,
       image: formImage,
-      setLoading: setSubmitting,
-      onDone: () => {
-        setNewPinPos(null);
-        setFormText("");
-        setFormImage(null);
-        setCommentMode(false);
-      },
+      imagePreviewUrl,
     });
+    // Clear form immediately (optimistic)
+    setNewPinPos(null);
+    setFormText("");
+    setFormImage(null);
+    setCommentMode(false);
   };
 
   const handleReply = () => {
     const parent = comments.find((c) => c.id === activeThreadId);
     if (!parent) return;
+    const imagePreviewUrl = replyImage
+      ? URL.createObjectURL(replyImage)
+      : null;
     submitComment({
       parentId: activeThreadId!,
       x: parent.x_percent,
       y: parent.y_percent,
       text: replyText,
       image: replyImage,
-      setLoading: setReplySubmitting,
-      onDone: () => {
-        setReplyText("");
-        setReplyImage(null);
-      },
+      imagePreviewUrl,
     });
+    // Clear reply form immediately (optimistic)
+    setReplyText("");
+    setReplyImage(null);
   };
 
   // -- Derived --
@@ -564,12 +633,15 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
         {children}
 
         {/* Existing pins */}
-        {comments.map((comment, idx) => (
+        {comments.map((comment, idx) => {
+          const isPending = comment.id.startsWith("temp-");
+          return (
           <div
             key={comment.id}
             className={`comment-ui absolute z-30 -translate-x-1/2 -translate-y-1/2
               w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
               shadow-md cursor-pointer transition-all duration-150 hover:scale-110
+              ${isPending ? "animate-pulse opacity-70" : ""}
               ${
                 activeThreadId === comment.id
                   ? "bg-coral text-white ring-2 ring-coral/30 ring-offset-2 scale-110"
@@ -597,7 +669,8 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
               </span>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {/* New pin being placed */}
         {newPinPos && (
@@ -728,6 +801,25 @@ export default function CommentLayer({ children }: { children: ReactNode }) {
       {commentMode && !newPinPos && (
         <div className="comment-ui fixed top-16 left-1/2 -translate-x-1/2 z-[60] bg-coral text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium">
           Klik hvor du vil placere din kommentar
+        </div>
+      )}
+
+      {/* Error toast (shown when form is already closed) */}
+      {submitError && !newPinPos && (
+        <div className="comment-ui fixed bottom-20 right-6 z-[60] w-80 bg-red-50 border border-red-200 rounded-xl shadow-lg p-4 flex items-start gap-3">
+          <span className="text-red-500 text-lg shrink-0">!</span>
+          <div className="flex-1">
+            <p className="text-sm text-red-800 font-medium">
+              Kommentar ikke gemt
+            </p>
+            <p className="text-xs text-red-600 mt-1">{submitError}</p>
+          </div>
+          <button
+            onClick={() => setSubmitError(null)}
+            className="text-red-400 hover:text-red-600 text-xs shrink-0"
+          >
+            ✕
+          </button>
         </div>
       )}
     </>
